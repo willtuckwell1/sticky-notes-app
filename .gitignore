@@ -1,0 +1,15 @@
+# Virtual environments
+.venv/
+.venv-*/
+venv/
+__pycache__/
+*.py[cod]
+
+# Local database and OS metadata
+*.sqlite3
+db.sqlite3
+.DS_Store
+
+# Editor/IDE settings
+.vscode/
+.idea/
