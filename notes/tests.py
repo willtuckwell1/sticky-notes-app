@@ -25,7 +25,7 @@ class NoteModelTest(TestCase):
 
 
 class NoteViewTest(TestCase):
-    """Test the note list and detail views in the app."""
+    """Test the note list, detail, create, update, and delete views."""
 
     def setUp(self):
         """Create a note for testing page responses."""
@@ -46,3 +46,63 @@ class NoteViewTest(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Note")
         self.assertContains(response, "This is a test note.")
+
+    def test_note_create_view(self):
+        """A user can create a new note from the form."""
+        response = self.client.post(
+            reverse("note_create"),
+            {"title": "New Note", "content": "Fresh content"},
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "New Note")
+        self.assertTrue(Note.objects.filter(title="New Note", content="Fresh content").exists())
+
+    def test_note_update_view(self):
+        """A user can edit an existing note."""
+        response = self.client.post(
+            reverse("note_update", args=[self.note.pk]),
+            {"title": "Updated Note", "content": "Updated content"},
+            follow=True,
+        )
+        self.note.refresh_from_db()
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(self.note.title, "Updated Note")
+        self.assertEqual(self.note.content, "Updated content")
+
+    def test_note_delete_view(self):
+        """A user can delete a note and be redirected back to the list."""
+        response = self.client.post(
+            reverse("note_delete", args=[self.note.pk]),
+            follow=True,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertFalse(Note.objects.filter(pk=self.note.pk).exists())
+        self.assertContains(response, "All Notes")
+
+    def test_note_create_use_case(self):
+        """Creating a note covers the create use case."""
+        self.client.post(
+            reverse("note_create"),
+            {"title": "Create Use Case", "content": "Created via test"},
+            follow=True,
+        )
+        self.assertTrue(
+            Note.objects.filter(title="Create Use Case", content="Created via test").exists()
+        )
+
+    def test_note_update_use_case(self):
+        """Updating a note covers the update use case."""
+        self.client.post(
+            reverse("note_update", args=[self.note.pk]),
+            {"title": "Updated Use Case", "content": "Updated via test"},
+            follow=True,
+        )
+        self.note.refresh_from_db()
+        self.assertEqual(self.note.title, "Updated Use Case")
+        self.assertEqual(self.note.content, "Updated via test")
+
+    def test_note_delete_use_case(self):
+        """Deleting a note covers the delete use case."""
+        self.client.post(reverse("note_delete", args=[self.note.pk]), follow=True)
+        self.assertFalse(Note.objects.filter(pk=self.note.pk).exists())
